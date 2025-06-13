@@ -27,6 +27,9 @@ package HOTLINE_COMPONENTES;
 {$ENDIF IMPLICITBUILDING}
 {$IMPLICITBUILD ON}
 
+contains
+  uHOTLINE_Button in 'uHOTLINE_Button.pas';
+
 requires
   rtl,
   vcl,
