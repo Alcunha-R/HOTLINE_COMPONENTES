@@ -3,7 +3,8 @@ unit uHOTLINE_Button;
 interface
 
 uses
-  System.SysUtils, System.Classes, Vcl.Controls, Vcl.StdCtrls, Vcl.Graphics, Winapi.Messages, Vcl.Themes;
+  System.SysUtils, System.Classes, Vcl.Controls, Vcl.StdCtrls, Vcl.Graphics, Winapi.Messages, Vcl.Themes,
+  Winapi.Windows, System.Types;
 
 type
   HOTLINE_Button = class(TButton)
@@ -15,6 +16,7 @@ type
     procedure SetButtonColor(const Value: TColor); // New Setter
   protected
     { Protected declarations }
+    procedure Paint; override;
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -39,10 +41,8 @@ constructor HOTLINE_Button.Create(AOwner: TComponent);
 begin
   inherited Create(AOwner);
   FColor := clBlack; // Default font color
-  Self.Font.Color := FColor;
   FButtonColor := clBtnFace; // Default button color
-  Self.Color := FButtonColor; // Apply button color
-  Self.StyleElements := StyleElements - [seClient, seBorder]; // Prevent theme override
+  // Other initializations if any
 end;
 
 procedure HOTLINE_Button.SetButtonColor(const Value: TColor);
@@ -50,7 +50,6 @@ begin
   if FButtonColor <> Value then
   begin
     FButtonColor := Value;
-    Self.Color := Value; // Apply button color
     Invalidate; // Ensures the button is repainted
   end;
 end;
@@ -60,9 +59,55 @@ begin
   if FColor <> Value then
   begin
     FColor := Value;
-    Self.Font.Color := FColor;
     Invalidate; // Ensures the button is repainted
   end;
+end;
+
+procedure HOTLINE_Button.Paint;
+var
+  DrawFlags: Longint;
+  TextRect: TRect;
+begin
+  // 1. Fill background
+  Canvas.Brush.Color := FButtonColor;
+  Canvas.FillRect(ClientRect);
+
+  // 2. Set font color
+  Canvas.Font.Color := FColor;
+
+  // 3. Prepare to draw text
+  TextRect := ClientRect;
+  Canvas.Brush.Style := bsClear; // Transparent background for text
+
+  // Determine text alignment (centered)
+  DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+  if not Enabled then // Adjust for disabled state
+  begin
+    Canvas.Font.Color := clGrayText; // Or another disabled color
+  end;
+
+  // 4. Draw caption
+  DrawText(Canvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
+
+  // 5. Draw a simple border (optional)
+  // Canvas.Pen.Color := clBlack; // Or another border color
+  // Canvas.Pen.Style := psSolid;
+  // Canvas.Brush.Style := bsClear;
+  // Canvas.Rectangle(ClientRect);
+
+
+  // 6. Draw focus rectangle if focused and not a themed button
+  //    This part can be complex with TButton if default drawing is bypassed.
+  //    For simplicity, we'll omit detailed focus/pressed states for now,
+  //    unless they are handled by a potential inherited call.
+  //    If we don't call inherited Paint, we lose default button behaviors
+  //    like pressed state visuals.
+  //    A true themed button look is hard to replicate manually.
+
+  // If we want to try and get some default behavior (like borders, focus),
+  // we could call inherited Paint; first, but it might draw over our background.
+  // Or, call it last, but it might draw over our text.
+  // For now, this is a fully custom paint.
 end;
 
 end.
