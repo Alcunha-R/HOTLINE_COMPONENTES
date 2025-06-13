@@ -12,8 +12,10 @@ type
     { Private declarations }
     FColor: TColor; // Existing FontColor
     FButtonColor: TColor; // New ButtonColor
+    FPicture: TPicture; // Added FPicture field
     procedure SetFontColor(const Value: TColor);
     procedure SetButtonColor(const Value: TColor); // New Setter
+    procedure SetPicture(const Value: TPicture); // Added SetPicture procedure
   protected
     { Protected declarations }
     procedure DoCustomPaint(DC: HDC);
@@ -21,10 +23,12 @@ type
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
+    destructor Destroy; override; // Added destructor
   published
     { Published declarations }
     property FontColor: TColor read FColor write SetFontColor default clBlack;
     property ButtonColor: TColor read FButtonColor write SetButtonColor default clBtnFace; // New Property
+    property Picture: TPicture read FPicture write SetPicture; // Added Picture property
   end;
 
 procedure Register;
@@ -43,7 +47,14 @@ begin
   inherited Create(AOwner);
   FColor := clBlack; // Default font color
   FButtonColor := clBtnFace; // Default button color
+  FPicture := TPicture.Create; // Initialize FPicture
   // Other initializations if any
+end;
+
+destructor HOTLINE_Button.Destroy;
+begin
+  FPicture.Free; // Free the TPicture object
+  inherited Destroy; // Call the inherited destructor
 end;
 
 procedure HOTLINE_Button.SetButtonColor(const Value: TColor);
@@ -53,6 +64,12 @@ begin
     FButtonColor := Value;
     Invalidate; // Ensures the button is repainted
   end;
+end;
+
+procedure HOTLINE_Button.SetPicture(const Value: TPicture);
+begin
+  FPicture.Assign(Value); // Assigns the picture content, handles nil
+  Invalidate; // Ensures the button is repainted
 end;
 
 procedure HOTLINE_Button.SetFontColor(const Value: TColor);
@@ -69,6 +86,8 @@ var
   DrawFlags: Longint;
   TextRect: TRect;
   TempCanvas: TCanvas; // New temporary canvas
+  ImageRect: TRect; // Added for image drawing
+  ImageX, ImageY: Integer; // Added for image positioning
 begin
   TempCanvas := TCanvas.Create;
   try
@@ -79,28 +98,38 @@ begin
     TempCanvas.FillRect(ClientRect);
 
     // 2. Set font color (and other font properties if needed)
-    TempCanvas.Font.Color := FColor;
+    // TempCanvas.Font.Color := FColor; // Moved to else block
     // If you need to match the button's font (name, size, style), copy them:
     // TempCanvas.Font.Name := Self.Font.Name;
     // TempCanvas.Font.Size := Self.Font.Size;
     // TempCanvas.Font.Style := Self.Font.Style;
     // etc. For now, only color is handled by FColor.
 
-    // 3. Prepare to draw text
-    TextRect := ClientRect;
-    TempCanvas.Brush.Style := bsClear; // Transparent background for text
-
-    DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
-    if not Enabled then
+    // 3. Draw Picture or Text
+    if (FPicture <> nil) and (FPicture.Graphic <> nil) and not FPicture.Graphic.Empty then
     begin
-      TempCanvas.Font.Color := clGrayText;
+      ImageX := (ClientRect.Right - ClientRect.Left - FPicture.Width) div 2;
+      ImageY := (ClientRect.Bottom - ClientRect.Top - FPicture.Height) div 2;
+      TempCanvas.Draw(ImageX, ImageY, FPicture.Graphic);
+    end
+    else
+    begin
+      // Existing text drawing code
+      TempCanvas.Font.Color := FColor;
+      TextRect := ClientRect;
+      TempCanvas.Brush.Style := bsClear; // Transparent background for text
+
+      DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+      if not Enabled then
+      begin
+        TempCanvas.Font.Color := clGrayText;
+      end;
+
+      // Draw caption
+      DrawText(TempCanvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
     end;
 
-    // 4. Draw caption
-    // DrawText needs an HDC. TempCanvas.Handle is the HDC.
-    DrawText(TempCanvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
-
-  // 5. Draw a simple border (optional)
+  // 5. Draw a simple border (optional) // Note: Numbering might need adjustment if we consider image drawing as step 4
   // Canvas.Pen.Color := clBlack; // Or another border color
   // Canvas.Pen.Style := psSolid;
   // Canvas.Brush.Style := bsClear;
