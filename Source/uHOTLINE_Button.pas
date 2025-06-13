@@ -16,7 +16,8 @@ type
     procedure SetButtonColor(const Value: TColor); // New Setter
   protected
     { Protected declarations }
-    procedure Paint; override;
+    procedure DoCustomPaint(DC: HDC);
+    procedure WndProc(var Message: TMessage); override;
   public
     { Public declarations }
     constructor Create(AOwner: TComponent); override;
@@ -63,13 +64,18 @@ begin
   end;
 end;
 
-procedure HOTLINE_Button.Paint;
+procedure HOTLINE_Button.DoCustomPaint(DC: HDC);
 var
   DrawFlags: Longint;
   TextRect: TRect;
+  OldCanvasHandle: HDC; // To store original canvas handle
 begin
-  // 1. Fill background
-  Canvas.Brush.Color := FButtonColor;
+  OldCanvasHandle := Self.Canvas.Handle;
+  Self.Canvas.Handle := DC;
+
+  try
+    // 1. Fill background
+    Canvas.Brush.Color := FButtonColor;
   Canvas.FillRect(ClientRect);
 
   // 2. Set font color
@@ -108,6 +114,36 @@ begin
   // we could call inherited Paint; first, but it might draw over our background.
   // Or, call it last, but it might draw over our text.
   // For now, this is a fully custom paint.
+  finally
+    Self.Canvas.Handle := OldCanvasHandle; // Restore canvas handle
+  end;
+end;
+
+procedure HOTLINE_Button.WndProc(var Message: TMessage);
+var
+  PS: TPaintStruct;
+  PaintDC: HDC;
+begin
+  if Message.Msg = WM_PAINT then
+  begin
+    if Self.Handle = 0 then // Check if handle is allocated
+    begin
+      inherited WndProc(Message);
+      Exit;
+    end;
+
+    PaintDC := BeginPaint(Self.Handle, PS);
+    try
+      DoCustomPaint(PaintDC); // Call DoCustomPaint with the obtained HDC
+    finally
+      EndPaint(Self.Handle, PS);
+    end;
+    // Set Message.Result to 0 to indicate WM_PAINT was handled,
+    // though for WM_PAINT, this is often implicit with BeginPaint/EndPaint.
+    Message.Result := 0;
+  end
+  else
+    inherited WndProc(Message);
 end;
 
 end.
