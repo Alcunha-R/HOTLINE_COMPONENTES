@@ -75,25 +75,25 @@ begin
 
   try
     // 1. Fill background
-    Canvas.Brush.Color := FButtonColor;
-  Canvas.FillRect(ClientRect);
+    Self.Canvas.Brush.Color := FButtonColor;
+    Self.Canvas.FillRect(ClientRect);
 
   // 2. Set font color
-  Canvas.Font.Color := FColor;
+    Self.Canvas.Font.Color := FColor;
 
   // 3. Prepare to draw text
   TextRect := ClientRect;
-  Canvas.Brush.Style := bsClear; // Transparent background for text
+    Self.Canvas.Brush.Style := bsClear; // Transparent background for text
 
   // Determine text alignment (centered)
   DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
   if not Enabled then // Adjust for disabled state
   begin
-    Canvas.Font.Color := clGrayText; // Or another disabled color
+    Self.Canvas.Font.Color := clGrayText; // Or another disabled color
   end;
 
   // 4. Draw caption
-  DrawText(Canvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
+  DrawText(Self.Canvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
 
   // 5. Draw a simple border (optional)
   // Canvas.Pen.Color := clBlack; // Or another border color
