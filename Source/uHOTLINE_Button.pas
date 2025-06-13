@@ -68,32 +68,37 @@ procedure HOTLINE_Button.DoCustomPaint(DC: HDC);
 var
   DrawFlags: Longint;
   TextRect: TRect;
-  OldCanvasHandle: HDC; // To store original canvas handle
+  TempCanvas: TCanvas; // New temporary canvas
 begin
-  OldCanvasHandle := Self.Canvas.Handle;
-  Self.Canvas.Handle := DC;
-
+  TempCanvas := TCanvas.Create;
   try
+    TempCanvas.Handle := DC; // Associate with the provided Device Context
+
     // 1. Fill background
-    Self.Canvas.Brush.Color := FButtonColor;
-    Self.Canvas.FillRect(ClientRect);
+    TempCanvas.Brush.Color := FButtonColor;
+    TempCanvas.FillRect(ClientRect);
 
-  // 2. Set font color
-    Self.Canvas.Font.Color := FColor;
+    // 2. Set font color (and other font properties if needed)
+    TempCanvas.Font.Color := FColor;
+    // If you need to match the button's font (name, size, style), copy them:
+    // TempCanvas.Font.Name := Self.Font.Name;
+    // TempCanvas.Font.Size := Self.Font.Size;
+    // TempCanvas.Font.Style := Self.Font.Style;
+    // etc. For now, only color is handled by FColor.
 
-  // 3. Prepare to draw text
-  TextRect := ClientRect;
-    Self.Canvas.Brush.Style := bsClear; // Transparent background for text
+    // 3. Prepare to draw text
+    TextRect := ClientRect;
+    TempCanvas.Brush.Style := bsClear; // Transparent background for text
 
-  // Determine text alignment (centered)
-  DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
-  if not Enabled then // Adjust for disabled state
-  begin
-    Self.Canvas.Font.Color := clGrayText; // Or another disabled color
-  end;
+    DrawFlags := DT_CENTER or DT_VCENTER or DT_SINGLELINE;
+    if not Enabled then
+    begin
+      TempCanvas.Font.Color := clGrayText;
+    end;
 
-  // 4. Draw caption
-  DrawText(Self.Canvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
+    // 4. Draw caption
+    // DrawText needs an HDC. TempCanvas.Handle is the HDC.
+    DrawText(TempCanvas.Handle, PChar(Caption), Length(Caption), TextRect, DrawFlags);
 
   // 5. Draw a simple border (optional)
   // Canvas.Pen.Color := clBlack; // Or another border color
@@ -114,8 +119,15 @@ begin
   // we could call inherited Paint; first, but it might draw over our background.
   // Or, call it last, but it might draw over our text.
   // For now, this is a fully custom paint.
+
+    // 5. Optional border (drawing with TempCanvas)
+    // TempCanvas.Pen.Color := clBlack;
+    // TempCanvas.Pen.Style := psSolid;
+    // TempCanvas.Brush.Style := bsClear;
+    // TempCanvas.Rectangle(ClientRect);
+
   finally
-    Self.Canvas.Handle := OldCanvasHandle; // Restore canvas handle
+    TempCanvas.Free; // Free the temporary canvas
   end;
 end;
 
