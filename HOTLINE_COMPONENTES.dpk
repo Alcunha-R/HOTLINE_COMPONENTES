@@ -28,7 +28,7 @@ package HOTLINE_COMPONENTES;
 {$IMPLICITBUILD ON}
 
 contains
-  uHOTLINE_Button in 'uHOTLINE_Button.pas';
+  uHOTLINE_Button in 'Source\uHOTLINE_Button.pas';
 
 requires
   rtl,
