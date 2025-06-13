@@ -33,4 +33,7 @@ requires
   tmsdXE12,
   tmsexdXE12;
 
+contains
+  uHOTLINE_Button in 'Source\uHOTLINE_Button.pas';
+
 end.
