@@ -81,6 +81,7 @@
         <DCCReference Include="vcl.dcp"/>
         <DCCReference Include="tmsdXE12.dcp"/>
         <DCCReference Include="tmsexdXE12.dcp"/>
+        <DCCReference Include="Source\uHOTLINE_Button.pas"/>
         <BuildConfiguration Include="Release">
             <Key>Cfg_2</Key>
             <CfgParent>Base</CfgParent>
