@@ -1,108 +1,85 @@
-class function TGraficoController.MostrarGraficoVendasUsuario(
-  pCdsVenda: TClientDataSet; pWebBrowser: TWebBrowser; WebCharts: TWebCharts): Boolean;
-var
-  chartData: string;
-  labels, data, backgroundColors: TStringList;
-  fs: TFormatSettings;
-  i: Integer;
-const
-  // Paleta de cores para evitar cores aleatórias e garantir boa visualização
-  CORES_GRAFICO: array[0..11] of string = (
-    '#4e79a7', '#f28e2c', '#e15759', '#76b7b2', '#59a14f', '#edc949',
-    '#af7aa1', '#ff9da7', '#9c755f', '#bab0ab', '#004d40', '#d81b60'
-  );
-begin
-  if pCdsVenda.IsEmpty then
-  begin
-    pWebBrowser.Navigate('about:blank');
-    Exit;
-  end;
+WebCharts1.NewProject
+   .Rows._Div.ColSpan(12).Add(
+    '<style>' +
+    'body { background-color: #121212; color: #FFFFFF; font-family: "Segoe UI", sans-serif; }' +
+    '.count { font-weight: bold; }' +
+    '.count_top { font-size: 14px; color: #E0E0E0; margin-bottom: 5px; display: block; }' +
+    '.count_bottom { font-size: 12px; color: #AAAAAA; margin-top: 5px; display: block; }' +
+    '.count_title { font-size: 30px; font-weight: bold; color: #1ABC9C; margin-bottom: 20px; }' +
+    '.count_box { padding: 15px; background: #1E1E1E; border-radius: 10px; margin-bottom: 15px; }' +
+    '</style>'
+  ).&End
 
-  labels := TStringList.Create;
-  data := TStringList.Create;
-  backgroundColors := TStringList.Create;
-  try
-    fs := TFormatSettings.Create;
-    fs.DecimalSeparator := '.';
+  // Título principal
+  .Rows._Div.ColSpan(8).Add(
+    '<div class="count_title">Curva ABC - Produtos Vendidos</div>'
+  ).&End
 
-    pCdsVenda.First;
-    i := 0;
-    while not pCdsVenda.Eof do
-    begin
-      if (pCdsVenda.FieldByName('TIPO').AsString = 'USUARIO') then
-        begin
-          labels.Add(QuotedStr(pCdsVenda.FieldByName('USUARIO').AsString)); // Adicionado QuotedStr para nomes com apóstrofo
-          data.Add(FloatToStr(pCdsVenda.FieldByName('TOTAL_VALOR').AsFloat, fs));
-          backgroundColors.Add(QuotedStr(CORES_GRAFICO[i mod Length(CORES_GRAFICO)]));
-          Inc(i);
-          Result := True;
-        end;
-      pCdsVenda.Next;
-    end;
+  // Totais
+  ._Div.ColSpan(8).Add(
+    '<div class="count_box"><i class="fas fa-chart-line"></i> Valor total das vendas: <strong style="color: #00E5FF;">' +
+    FormatFloat('#,###,##0.00', FTotalCurvaABC.cValorTotalCurvaACBProdutos) +
+    '</strong></div>'
+  ).&End
 
-    chartData :=
-      '<!DOCTYPE html>' +
-      '<html>' +
-      '<head>' +
-      '  <meta charset="utf-8">' +
-      '  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js"></script>' +
-      '  <style>' +
-      '    body { background-color: #000000; color: #EAEAEA; font-family: sans-serif; margin: -15px; padding: 0; }' +
-      '  </style>' +
-      '</head>' +
-      '<body>' +
-      '  <div style="text-align: center;">'+
-      '  <h3 style="font-size: 20px; font-weight: normal;">Vendas por Usuário</h3>' +
-      '  </div>'+
-      '  <canvas id="graficoVendasUsuario" width="450" height="130"></canvas>' +
-      '  <script>' +
-      // --- MUDANÇA 1: Corrigido o ID do elemento canvas ---
-      '    var ctx = document.getElementById("graficoVendasUsuario").getContext("2d");' +
-      '    var myChart = new Chart(ctx, {' +
-      '      type: "doughnut",' +
-      '      data: {' +
-      '        labels: [' + labels.CommaText + '],' +
-      '        datasets: [{' +
-      '          label: "Total de Vendas (R$)",' +
-      '          data: [' + data.CommaText + '],' +
-      '          backgroundColor: [' + backgroundColors.CommaText + '],' +
-      '          borderColor: "rgba( 0, 0, 0, 1)",' +
-      '          borderWidth: 1,' +
-      '        }]' +
-      '      },' +
-      '      options: {' +
-      '        responsive: true,' +
-      '        maintainAspectRatio: true,' +
-      '        legend: { position: "right", labels: { fontColor: "#EAEAEA", fontSize: 10, usePointStyle: true } },' +
-      // --- MUDANÇA 2: Modificado o callback do tooltip para incluir a porcentagem ---
-      '        tooltips: {' +
-      '          callbacks: {' +
-      '            label: function(tooltipItem, data) {' +
-      '              var dataset = data.datasets[tooltipItem.datasetIndex];' +
-      '              var total = dataset.data.reduce(function(previousValue, currentValue) { return previousValue + currentValue; });' +
-      '              var currentValue = dataset.data[tooltipItem.index];' +
-      '              var percentage = ((currentValue / total) * 100).toFixed(2);' +
-      '              var label = data.labels[tooltipItem.index] || "";' +
-      '              var valorFormatado = parseFloat(currentValue).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });' +
-      '              return label + ": " + valorFormatado + " (" + percentage + "%)";' +
-      '            }' +
-      '          }' +
-      '        }' +
-      '      }' +
-      '    });' +
-      '  </script>' +
-      '</body>' +
-      '</html>';
+  ._Div.ColSpan(8).Add(
+    '<div class="count_box"><i class="fas fa-dollar-sign"></i> Valor total do lucro bruto: <strong style="color: #00FF94;">' +
+    FormatFloat('#,###,##0.00', FTotalCurvaABC.cValorLucroBrutoCurvaACBProdutos) +
+    '</strong></div>'
+  ).&End
 
-    WebCharts.NewProject
-      .ClearHTML
-      .HTML(chartData)
-      .WebBrowser(pWebBrowser)
-      .Generated;
+  ._Div.ColSpan(8).Add(
+    '<div class="count_box"><i class="fas fa-calendar-alt"></i> Período: <strong style="color: #FFD54F;">' +
+    FormatDateTime('dd/mm/yyyy', DTIni.Date) + ' a ' + FormatDateTime('dd/mm/yyyy', DTFin.Date) +
+    '</strong></div>'
+  ).&End
 
-  finally
-    labels.Free;
-    data.Free;
-    backgroundColors.Free;
-  end;
-end;
+  .&End
+
+  // Gráfico
+  .Charts._ChartType(line).Attributes
+    .Name('Meu Grafico de Barras').ColSpan(8)
+    .DataSet.textLabel('Curva ABC').DataSet(CDSGraficoCurvaABC)
+    .BackgroundColor('0,229,255').BorderColor('0,229,255').Fill(false)
+  .&End
+  .&End
+  .&End
+
+  .Jumpline
+
+  // Cards Curva A/B/C
+  .Rows
+    ._Div.ColSpan(2).Add(
+      '<div class="count_box"><span class="count_top"><i class="fas fa-star"></i> Curva A</span>' +
+      '<div class="count" style="font-size: 20px; color: #00E5FF;">' + aValorCurvaA + '</div>' +
+      '<span class="count_bottom"><i class="fas fa-percentage"></i> ' + aQtdeCurvaA +
+      '% dos produtos, representam ' + aPercentualCurvaA + '% do faturamento</span></div>'
+    ).&End
+
+    ._Div.ColSpan(2).Add(
+      '<div class="count_box"><span class="count_top"><i class="fas fa-clock"></i> Curva B</span>' +
+      '<div class="count" style="font-size: 20px; color: #FFA726;">' + aValorCurvaB + '</div>' +
+      '<span class="count_bottom"><i class="fas fa-percentage"></i> ' + aQtdeCurvaB +
+      '% dos produtos, representam ' + aPercentualCurvaB + '% do faturamento</span></div>'
+    ).&End
+
+    ._Div.ColSpan(2).Add(
+      '<div class="count_box"><span class="count_top"><i class="fas fa-box"></i> Curva C</span>' +
+      '<div class="count" style="font-size: 20px; color: #EF5350;">' + aValorCurvaC + '</div>' +
+      '<span class="count_bottom"><i class="fas fa-percentage"></i> ' + aQtdeCurvaC +
+      '% dos produtos, representam ' + aPercentualCurvaC + '% do faturamento</span></div>'
+    ).&End
+  .&End
+
+  .Jumpline.Jumpline.Jumpline
+
+  .Rows.Title.Configuracoes.H5('Relação dos produtos vendidos, ordenados por maior valor vendido')
+  .&End
+  .&End
+  .&End
+
+  .Table.TableClass.tableSm.tableHover.EndTableClass.DataSet.DataSet(CDSProdutosCurvaABC)
+  .&End
+  .&End
+
+  .WebBrowser(wbABC).Generated;
